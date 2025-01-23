@@ -1,289 +1,167 @@
 ---
 
-### **《民航应急响应系统》Ubuntu 22.04 专属部署指南（详细版）**
+### **《民航应急响应系统》Ubuntu 22.04 部署总结文档**
 
 ---
 
-#### **一、服务器环境准备**
-**1. 操作系统确认**  
-```bash
-# 确认系统版本
-cat /etc/os-release | grep "PRETTY_NAME"
-# 预期输出：PRETTY_NAME="Ubuntu 22.04.3 LTS"
-```
+#### **一、部署前准备**
+1. **服务器要求**  
+   - Ubuntu 22.04 LTS  
+   - 开放端口：`5000`（开发测试）、`443`（生产HTTPS）  
+   - 依赖工具：`git`, `python3-pip`, `mysql-server`, `nginx`
 
-**2. 更新系统**  
-```bash
-sudo apt update && sudo apt upgrade -y
-sudo reboot  # 更新后重启
-```
-
----
-
-#### **二、依赖安装（逐步操作）**
-**1. 安装基础工具**  
-```bash
-sudo apt install -y git curl wget unzip
-```
-
-**2. 安装Python环境**  
-```bash
-# Ubuntu 22.04 默认自带Python 3.10
-sudo apt install -y python3-pip python3-venv
-```
-
-**3. 安装MySQL数据库**  
-```bash
-sudo apt install -y mysql-server
-
-# 启动MySQL服务
-sudo systemctl start mysql
-sudo systemctl enable mysql
-
-# 检查MySQL状态（确保显示“active (running)”）
-sudo systemctl status mysql
-```
-
-**4. 安装Nginx（生产环境必需）**  
-```bash
-sudo apt install -y nginx
-```
+2. **目录规范**  
+   ```bash
+   /www/wwwroot/air_emergency_response/  # 项目根目录（Git自动生成）
+   ├── venv/           # Python虚拟环境
+   ├── .env            # 环境变量文件
+   ├── app.py          # 主程序入口
+   └── (其他代码子目录) # 从Git克隆的代码结构
+   ```
 
 ---
 
-#### **三、项目部署（逐行操作）**
-**1. 克隆代码（假设代码仓库为GitHub）**  
+#### **二、核心部署步骤**
+##### **1. 克隆代码**
 ```bash
-# 创建项目目录
-sudo mkdir -p /opt/air_emergency
-sudo chown -R $USER:$USER /opt/air_emergency  # 赋予当前用户权限
-
-# 克隆代码（替换为实际仓库地址）
-cd /opt/air_emergency
+sudo mkdir -p /www/wwwroot
+sudo chown -R $USER:$USER /www/wwwroot  # 确保当前用户有权限
+cd /www/wwwroot
 git clone -b main https://github.com/A-Dawn/air_emergency_response.git
 ```
 
-**2. 创建虚拟环境**  
+##### **2. 初始化虚拟环境**
 ```bash
+cd /www/wwwroot/air_emergency_response
 python3 -m venv venv
-source venv/bin/activate  # 激活虚拟环境
-# 激活后命令行提示符会显示 (venv)
-```
-
-**3. 安装Python依赖**  
-```bash
-# 确保在虚拟环境中（命令行开头有(venv)）
+source venv/bin/activate  # 激活环境（后续操作需在虚拟环境中执行）
 pip install -r requirements.txt
 ```
 
----
-
-#### **四、MySQL配置（详细步骤）**
-**1. 安全初始化MySQL（重要！）**  
-```bash
-sudo mysql_secure_installation
-```
-- 按提示操作：  
-  - 设置root密码（建议高强度密码）  
-  - 移除匿名用户：输入 `Y`  
-  - 禁止远程root登录：输入 `Y`  
-  - 移除测试数据库：输入 `Y`  
-  - 重新加载权限表：输入 `Y`  
-
-**2. 创建专用数据库和用户**  
-```bash
-# 登录MySQL（使用上一步设置的root密码）
+##### **3. 配置MySQL数据库**
+```sql
+-- 登录MySQL
 sudo mysql -u root -p
 
--- 执行SQL命令
+-- 创建数据库和用户
 CREATE DATABASE air_emergency CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 CREATE USER 'air_user'@'localhost' IDENTIFIED BY 'StrongPass123!';
 GRANT ALL PRIVILEGES ON air_emergency.* TO 'air_user'@'localhost';
 FLUSH PRIVILEGES;
-EXIT;
 ```
 
-**3. 验证数据库连接**  
+##### **4. 设置环境变量**
 ```bash
-mysql -u air_user -p air_emergency
-# 输入密码后应成功进入MySQL命令行
+nano /www/wwwroot/air_emergency_response/.env
 ```
-
----
-
-#### **五、环境变量配置（关键步骤）**
-**1. 创建.env文件**  
-```bash
-nano /opt/air_emergency/.env
-```
-内容如下（按实际修改）：  
+内容示例：
 ```ini
 DATABASE_URL=mysql+pymysql://air_user:StrongPass123!@localhost/air_emergency
-JWT_SECRET_KEY=YourSecureKey123!  # 至少32位随机字符串
-SM2_PRIVATE_KEY=308193020100301...  # 真实SM2私钥
+JWT_SECRET_KEY=YourSecureKey123!
+SM2_PRIVATE_KEY=308193020100301...
 ```
 
-**2. 设置文件权限（防止泄露）**  
+##### **5. 启动服务**
 ```bash
-chmod 600 /opt/air_emergency/.env  # 仅允许所有者读写
-```
-
-**3. 临时加载环境变量（测试用）**  
-```bash
-source .env
-```
-
----
-
-#### **六、服务启动与验证**
-**1. 初始化数据库表**  
-```bash
-# 在项目目录下执行
+# 初始化数据库表
 flask shell
 >>> from app import db
 >>> db.create_all()
->>> exit()
-```
 
-**2. 启动开发服务器（仅测试用）**  
-```bash
-flask run --host=0.0.0.0 --port=5000
-# 按Ctrl+C停止
-```
-
-**3. 配置生产服务（Systemd）**  
-```bash
-# 创建服务文件
+# 配置Systemd服务
 sudo nano /etc/systemd/system/air_emergency.service
 ```
-内容如下：  
+服务文件内容：
 ```ini
 [Unit]
-Description=民航应急响应系统后端服务
+Description=应急响应系统服务
 After=network.target
 
 [Service]
-User=ubuntu  # 替换为实际用户名
-Group=ubuntu
-WorkingDirectory=/opt/air_emergency
-EnvironmentFile=/opt/air_emergency/.env
-ExecStart=/opt/air_emergency/venv/bin/gunicorn -w 4 -b 0.0.0.0:5000 app:app
-
+User=ubuntu
+WorkingDirectory=/www/wwwroot/air_emergency_response
+EnvironmentFile=/www/wwwroot/air_emergency_response/.env
+ExecStart=/www/wwwroot/air_emergency_response/venv/bin/gunicorn -w 4 -b 0.0.0.0:5000 app:app
 Restart=always
-RestartSec=5
 
 [Install]
 WantedBy=multi-user.target
 ```
-
-**4. 启动服务**  
+启动命令：
 ```bash
 sudo systemctl daemon-reload
 sudo systemctl start air_emergency
-sudo systemctl enable air_emergency  # 开机自启
-
-# 检查状态（确保显示"active (running)"）
-sudo systemctl status air_emergency
+sudo systemctl enable air_emergency
 ```
 
----
-
-#### **七、Nginx反向代理配置**
-**1. 基本配置**  
+##### **6. 配置Nginx反向代理**
 ```bash
 sudo nano /etc/nginx/sites-available/air_emergency
 ```
-内容如下：  
+内容示例：
 ```nginx
 server {
     listen 80;
-    server_name your-domain.com;  # 替换为实际域名或IP
-
+    server_name your-domain.com;
     location / {
         proxy_pass http://127.0.0.1:5000;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     }
 }
 ```
-
-**2. 启用配置**  
+启用配置：
 ```bash
 sudo ln -s /etc/nginx/sites-available/air_emergency /etc/nginx/sites-enabled/
-sudo nginx -t  # 检查配置语法
-sudo systemctl restart nginx
-```
-
-**3. 防火墙放行**  
-```bash
-sudo ufw allow 80/tcp
-sudo ufw allow 5000/tcp  # 开发调试用
-sudo ufw enable
+sudo nginx -t && sudo systemctl restart nginx
 ```
 
 ---
 
-#### **八、常见问题排查**
-**问题1：数据库连接失败**  
-```bash
-# 检查MySQL服务状态
-sudo systemctl status mysql
+#### **三、验证与监控**
+1. **服务状态检查**  
+   ```bash
+   sudo systemctl status air_emergency  # 应为active (running)
+   curl -I http://localhost:5000        # 返回200 OK
+   ```
 
-# 检查用户权限
-mysql -u air_user -p
-SHOW GRANTS FOR 'air_user'@'localhost';
-```
-
-**问题2：服务启动失败**  
-```bash
-# 查看完整日志
-journalctl -u air_emergency -f --since "5 minutes ago"
-```
-
-**问题3：端口冲突**  
-```bash
-# 查看5000端口占用
-sudo lsof -i :5000
-
-# 如果被占用，修改app.py中的端口或终止冲突进程
-kill -9 <PID>
-```
+2. **日志查看**  
+   ```bash
+   journalctl -u air_emergency -f       # 实时日志
+   tail -f /var/log/nginx/access.log    # Nginx访问日志
+   ```
 
 ---
 
-#### **九、备份脚本（每日自动执行）**
-**1. 创建备份脚本**  
-```bash
-sudo nano /opt/backup_script.sh
-```
-内容：  
-```bash
-#!/bin/bash
-DATE=$(date +%F)
-mysqldump -u air_user -p'StrongPass123!' air_emergency > /backup/air_emergency_$DATE.sql
-tar -czvf /backup/air_emergency_$DATE.tar.gz /opt/air_emergency
-find /backup -type f -mtime +30 -delete
-```
+#### **四、维护命令**
+| 操作                 | 命令                                  |
+|----------------------|---------------------------------------|
+| 重启服务             | `sudo systemctl restart air_emergency` |
+| 停止服务             | `sudo systemctl stop air_emergency`    |
+| 备份数据库           | `mysqldump -u air_user -p air_emergency > backup.sql` |
+| 更新代码             | `git pull && systemctl restart air_emergency` |
 
-**2. 设置定时任务**  
-```bash
-sudo crontab -e
-# 添加以下内容（每天凌晨2点备份）
-0 2 * * * /bin/bash /opt/backup_script.sh
-```
+---
+
+#### **五、常见问题排查**
+| 问题现象             | 解决方案                              |
+|----------------------|---------------------------------------|
+| **数据库连接失败**   | 检查`.env`中的账号密码和MySQL权限     |
+| **端口冲突**         | `sudo lsof -i :5000` 终止占用进程     |
+| **Token解密失败**    | 确认`.env`中的`SM2_PRIVATE_KEY`格式正确 |
+| **Nginx 502错误**    | 检查Gunicorn服务是否正常运行          |
 
 ---
 
 ### **附录：部署流程图**
 ```plaintext
-[更新系统] → [安装依赖] → [配置MySQL]  
+[克隆代码] → [配置虚拟环境] → [安装依赖]  
     ↓  
-[克隆代码] → [设置虚拟环境] → [安装依赖]  
+[初始化数据库] → [设置环境变量]  
     ↓  
-[配置环境变量] → [初始化数据库]  
+[启动Systemd服务] → [配置Nginx]  
     ↓  
-[配置Systemd服务] → [启动服务]  
-    ↓  
-[配置Nginx] → [完成部署]
+[验证部署] → [完成]
 ```
+
+按此文档操作可在 **20分钟内完成部署**，若有报错请优先检查路径和权限！
