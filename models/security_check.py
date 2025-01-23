@@ -1,3 +1,4 @@
+# /www/wwwroot/air_emergency_response/models/security_check.py
 from . import db
 
 class SecurityCheck(db.Model):

@@ -1,7 +1,9 @@
-from flask import Flask
+# /www/wwwroot/air_emergency_response/app.py
+from flask import Flask, jsonify
 from models import db
 from routes import auth, emergency_plan, incident, security_check, user
 from config import Config
+import os
 
 app = Flask(__name__)
 app.config.from_object(Config)

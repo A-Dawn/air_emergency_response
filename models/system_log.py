@@ -1,3 +1,4 @@
+# /www/wwwroot/air_emergency_response/models/system_log.py
 from . import db
 
 class SystemLog(db.Model):

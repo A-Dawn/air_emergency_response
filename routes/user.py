@@ -1,9 +1,10 @@
-from flask import Blueprint, request, jsonify
+# /www/wwwroot/air_emergency_response/routes/user.py
+from flask import Blueprint, request, jsonify, current_app
 from models.user import User
 from utils.jwt_utils import generate_jwt_token, decode_jwt_token
 from utils.sm_utils import generate_sm2_key_pair
 from functools import wraps
-from ... import db
+from .. import db
 
 user = Blueprint('user', __name__)
 
@@ -13,7 +14,7 @@ def token_required(f):
         token = request.headers.get('Authorization')
         if not token:
             return jsonify({'message': '缺少Token!'}), 401
-        user_id = decode_jwt_token(token, app.config['JWT_SECRET_KEY'])
+        user_id = decode_jwt_token(token, current_app.config['JWT_SECRET_KEY'])
         if isinstance(user_id, str):
             return jsonify({'message': user_id}), 401
         current_user = User.query.filter_by(user_id=user_id).first()

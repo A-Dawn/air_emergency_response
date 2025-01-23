@@ -1,3 +1,4 @@
+# /www/wwwroot/air_emergency_response/routes/__init__.py
 from flask import Blueprint
 
 auth = Blueprint('auth', __name__)

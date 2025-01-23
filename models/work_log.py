@@ -1,3 +1,4 @@
+# /www/wwwroot/air_emergency_response/models/work_log.py
 from . import db
 
 class WorkLog(db.Model):

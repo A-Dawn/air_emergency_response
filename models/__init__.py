@@ -1,5 +1,5 @@
+# /www/wwwroot/air_emergency_response/models/__init__.py
 from flask_sqlalchemy import SQLAlchemy
-
 db = SQLAlchemy()
 
 from .user import User
