@@ -5,7 +5,7 @@ from utils.jwt_utils import generate_jwt_token, decode_jwt_token
 from utils.sm_utils import generate_sm2_key_pair
 from functools import wraps
 import datetime
-from .. import db
+from models import db
 
 auth = Blueprint('auth', __name__)
 

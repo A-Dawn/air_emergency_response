@@ -1,8 +1,12 @@
+import sys
+import os
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from flask import Flask, jsonify
 from models import db
 from routes import auth, emergency_plan, incident, security_check, user
 from config import Config
-import os
 
 app = Flask(__name__)
 app.config.from_object(Config)  # 从环境变量加载配置
