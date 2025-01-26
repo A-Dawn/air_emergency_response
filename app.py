@@ -1,14 +1,13 @@
-# /www/wwwroot/air_emergency_response/app.py
+import sys
+import os
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 from flask import Flask, jsonify
 from models import db
 from routes import auth, emergency_plan, incident, security_check, user
 from config import Config
-import os
 
 app = Flask(__name__)
-app.config.from_object(Config)
-
-# 初始化数据库
+app.config.from_object(Config)  # 从环境变量加载配置
 db.init_app(app)
 
 # 注册蓝图
@@ -24,6 +23,6 @@ def index():
 
 if __name__ == '__main__':
     with app.app_context():
-        # 创建所有数据库表
-        db.create_all()
-    app.run(debug=True)
+        db.create_all()  # 初始化数据库表（仅首次部署时运行）
+    # 生产环境必须关闭Debug模式！
+    app.run(host='0.0.0.0', port=5000, debug=True)

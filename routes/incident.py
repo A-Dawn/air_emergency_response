@@ -5,7 +5,7 @@ from functools import wraps
 
 from models.user import User
 from utils.jwt_utils import decode_jwt_token
-from .. import db
+from models import db
 
 incident = Blueprint('incident', __name__)
 
