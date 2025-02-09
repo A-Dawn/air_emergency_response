@@ -92,4 +92,5 @@
 
 鸣谢以下贡献者对项目做出的贡献！
 *   [Dawn ARC](https://github.com/A-Dawn) - 代码编写、文档更新、BUG修复
-*   [BHBNSN](https://github.com/BHBNSN) - 代码优化、辅助开发
+
+[![Contributors](https://img.shields.io/github/contributors/A-Dawn/air_emergency_response)](https://github.com/OWNER/REPO/graphs/contributors)
