@@ -1,3 +1,10 @@
+## License
+
+Copyright (c) [2025] [Dawn_ARC]. All rights reserved.
+
+未经明确授权,严禁使用、复制、修改或分发本代码。
+
+
 ### 待办列表
 #### 紧急修复
 
