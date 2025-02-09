@@ -87,3 +87,9 @@
 3. 再次审阅了各个python库依赖的版本并固定依赖库版本，修复了一些特性
 4. 修复部分硬编码逻辑
 5. 添加基础日志功能
+
+## Contributors
+
+鸣谢以下贡献者对项目做出的贡献！
+*   [Dawn ARC](https://github.com/A-Dawn) - 代码编写、文档更新、BUG修复
+*   [BHBNSN](https://github.com/BHBNSN) - 代码优化、辅助开发
