@@ -3,7 +3,8 @@ from . import db
 
 class User(db.Model):
     __tablename__ = 'users'
-    user_id = db.Column(db.Integer, primary_key=True)  # 用户ID
-    username = db.Column(db.String(50), unique=True, nullable=False)  # 用户名
-    sm2_public_key = db.Column(db.Text, nullable=False)  # SM2公钥
-    role_level = db.Column(db.Integer, nullable=False)  # 用户角色等级
+    user_id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(50), unique=True, nullable=False)
+    hashed_password = db.Column(db.String(128), nullable=False)  # 新增字段:哈希密码
+    salt = db.Column(db.String(32), nullable=False) # 新增字段: 盐值
+    role_level = db.Column(db.Integer, nullable=False)

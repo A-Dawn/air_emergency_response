@@ -22,7 +22,8 @@ def index():
     return jsonify({'message': '欢迎使用应急响应平台!'})
 
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()  # 初始化数据库表（仅首次部署时运行）
-    # 生产环境必须关闭Debug模式！
+   # with app.app_context():
+   #     db.drop_all()
+   #     db.create_all()  # 初始化数据库表（仅首次部署时运行）
+   # # 生产环境必须关闭Debug模式！
     app.run(host='0.0.0.0', port=5000, debug=True)
