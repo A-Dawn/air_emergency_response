@@ -11,3 +11,31 @@ class LoginAttempt(db.Model):
 
     def __repr__(self):
         return f'<LoginAttempt {self.id}>'
+
+"""
+components:
+  schemas:
+    LoginAttempt:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: 尝试记录ID
+        user_id:
+          type: integer
+          description: 用户ID
+        attempt_time:
+          type: string
+          format: date-time
+          description: 尝试时间
+        success:
+          type: boolean
+          description: 尝试是否成功
+        ip_address:
+          type: string
+          description: 尝试IP地址
+      required:
+        - user_id
+        - success
+        - ip_address
+"""

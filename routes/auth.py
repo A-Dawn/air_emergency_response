@@ -4,11 +4,12 @@ from models.login_attempt import LoginAttempt
 from utils.jwt_utils import generate_jwt_token
 from flask import current_app
 from gmssl import sm3
-
 import datetime
 from models import db
 import uuid  # 导入 uuid
+
 auth = Blueprint('auth', __name__)
+
 MAX_FAILED_ATTEMPTS = 5
 BAN_DURATION = 300
 
@@ -17,7 +18,6 @@ def is_user_banned(username):
     user = User.query.filter_by(username=username).first()
     if not user:
         return False
-
     # 计算锁定时间窗口
     cutoff_time = datetime.datetime.utcnow() - datetime.timedelta(seconds=BAN_DURATION)
     failed_attempts = LoginAttempt.query.filter(
@@ -38,15 +38,94 @@ def record_attempt(username, ip_address, success):
         )
         db.session.add(attempt)
         db.session.commit()
+
 def record_successful_attempt(username, ip_address):
     """记录成功登录"""
     record_attempt(username, ip_address, True)
+
 def record_failed_attempt(username, ip_address):
     """记录失败登录"""
     record_attempt(username, ip_address, False)
 
+"""
+  tags:
+    - 认证
+"""
 @auth.route('/login', methods=['POST'])
 def login():
+    """
+    openapi:
+      summary: 用户登录
+      description: 用户登录接口，验证用户名和密码，返回 JWT 令牌。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                  description: 用户名
+                password:
+                  type: string
+                  description: 密码
+              required:
+                - username
+                - password
+      responses:
+        '200':
+          description: 登录成功，返回 JWT 令牌
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    description: JWT 令牌
+        '401':
+          description: 密码错误
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 密码错误!
+        '403':
+          description: 账户已锁定
+          content:
+            application/json:
+              schema:
+             
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 账户已锁定,请稍后重试!
+        '404':
+          description: 用户不存在
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 用户不存在!
+        '500':
+          description: 服务器内部错误 (Salt 为空)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 用户数据异常,请联系管理员!
+    """
     data = request.get_json()
     username = data.get('username')
     password = data.get('password')
@@ -60,7 +139,7 @@ def login():
     if not user:
         record_failed_attempt(username, ip_address)
         return jsonify({'message': '用户不存在!'}), 404
-
+    
     # 确保salt存在
     if user.salt is None:
         print("Error: Salt is None!") # 打印错误日志

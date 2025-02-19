@@ -1,39 +1,52 @@
+# utils/sm_utils.py
 import os
-from gmssl import sm2, sm4, func
-from secrets import randbits
-from flask import current_app
+from gmssl import sm3, func  # 导入 gmssl 库
+import binascii
 
-def load_server_sm2_private_key():
-    """从环境变量加载服务器 SM2 私钥"""
-    private_key = current_app.config.get('SM2_PRIVATE_KEY')
-    if not private_key:
-        raise ValueError("SM2_PRIVATE_KEY 未配置!")  # 关键: 抛出异常
+def encrypt_sm3(data, salt):
+    """使用 SM3 算法对数据进行哈希 (加盐)"""
+    salted_data = salt + data
+    #  将字符串转换为字节串
+    bytes_data = salted_data.encode('utf-8')
+     #  创建 SM3 对象
+    sm3_hash = sm3.sm3_hash(func.bytes_to_list(bytes_data))
+    return sm3_hash
+
+def generate_salt(length=16):
+    """生成指定长度的随机盐值"""
+    return os.urandom(length).hex()  # 返回 16 进制字符串
+
+# 加密功能
+def encrypt_sm4(data, key, iv):
+    """SM4加密 (CBC模式)"""
+    from gmssl import sm4
+    sm4_crypt = sm4.CryptSM4()
+    sm4_crypt.set_key(key, sm4.SM4_ENCRYPT)
+    encrypt_data = sm4_crypt.crypt_cbc(iv, data.encode('utf-8'))
+    return encrypt_data
+
+# 解密功能
+def decrypt_sm4(data, key, iv):
+    """SM4解密 (CBC模式)"""
+    from gmssl import sm4
+    sm4_crypt = sm4.CryptSM4()
+    sm4_crypt.set_key(key, sm4.SM4_DECRYPT)
+    decrypt_data = sm4_crypt.crypt_cbc(iv, data)
+    return decrypt_data.decode('utf-8')
+
+# 加载服务器 SM2 私钥
+def load_server_sm2_private_key(pem_path, password=None):
+    """
+    加载 SM2 私钥 (PEM 格式)
+    :param pem_path: 私钥文件路径
+    :param password: 私钥密码 (如果私钥已加密)
+    :return: SM2 私钥对象
+    """
+    from gmssl import sm2
+
+    with open(pem_path, 'rb') as f:
+        key = f.read()
+    if password:
+        password = password.encode('utf-8')
+    private_key = sm2.CryptSM2(private_key=key, public_key=None)  #  只需要私钥
     return private_key
-
-def generate_sm4_key():
-    """生成16字节的SM4密钥"""
-    return os.urandom(16).hex()  # 返回16字节的十六进制字符串
-
-def encrypt_sm4(data, key):
-    """使用SM4-CBC加密数据，返回IV+密文"""
-    sm4_crypt = sm4.CryptSM4()
-    key_bytes = bytes.fromhex(key)  # 将十六进制字符串转换为字节
-    if len(key_bytes) != 16:
-        raise ValueError("SM4 key必须为16字节")
-    iv = os.urandom(16)  # 生成随机IV
-    sm4_crypt.set_key(key_bytes, sm4.SM4_ENCRYPT)
-    encrypted_data = sm4_crypt.crypt_cbc(iv, data.encode())
-    return iv + encrypted_data  # 返回IV和密文组合
-
-def decrypt_sm4(encrypted_data_with_iv, key):
-    """从IV+密文中使用SM4-CBC解密数据"""
-    sm4_crypt = sm4.CryptSM4()
-    key_bytes = bytes.fromhex(key)
-    if len(key_bytes) != 16:
-        raise ValueError("SM4 key必须为16字节")
-    iv = encrypted_data_with_iv[:16]  # 提取前16字节作为IV
-    encrypted_data = encrypted_data_with_iv[16:]
-    sm4_crypt.set_key(key_bytes, sm4.SM4_DECRYPT)
-    decrypted_data = sm4_crypt.crypt_cbc(iv, encrypted_data)
-    return decrypted_data.decode()
-

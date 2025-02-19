@@ -10,3 +10,37 @@ class WorkLog(db.Model):
     file_references = db.Column(db.Text, nullable=True)  # 文件引用
     create_time = db.Column(db.DateTime, default=db.func.current_timestamp())  # 创建时间
     update_time = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())  # 更新时间
+"""
+components:
+  schemas:
+    WorkLog:
+      type: object
+      properties:
+        log_id:
+          type: integer
+          description: 日志ID
+        user_id:
+          type: integer
+          description: 用户ID
+        log_content:
+          type: string
+          description: 日志内容
+        work_progress:
+          type: integer
+          description: 工作进度
+        file_references:
+          type: string
+          description: 文件引用
+        create_time:
+          type: string
+          format: date-time
+          description: 创建时间
+        update_time:
+          type: string
+          format: date-time
+          description: 更新时间
+      required:
+        - user_id
+        - log_content
+        - work_progress
+"""

@@ -10,3 +10,38 @@ class SystemLog(db.Model):
     operation_result = db.Column(db.Integer, nullable=False)  # 操作结果
     ip_address = db.Column(db.String(50), nullable=False)  # IP地址
     operation_time = db.Column(db.DateTime, default=db.func.current_timestamp())  # 操作时间
+"""
+components:
+  schemas:
+    SystemLog:
+      type: object
+      properties:
+        log_id:
+          type: integer
+          description: 系统日志ID
+        operation_type:
+          type: integer
+          description: 操作类型
+        operator_id:
+          type: integer
+          description: 操作员ID
+        operation_content:
+          type: string
+          description: 操作内容
+        operation_result:
+          type: integer
+          description: 操作结果
+        ip_address:
+          type: string
+          description: IP地址
+        operation_time:
+          type: string
+          format: date-time
+          description: 操作时间
+      required:
+        - operation_type
+        - operator_id
+        - operation_content
+        - operation_result
+        - ip_address
+"""

@@ -2,7 +2,6 @@
 from flask import Blueprint, request, jsonify, current_app
 from models.security_check import SecurityCheck
 from functools import wraps
-
 from models.user import User
 from utils.jwt_utils import decode_jwt_token
 from models import db
@@ -24,9 +23,38 @@ def token_required(f):
         return f(current_user, *args, **kwargs)
     return decorated
 
+"""
+  tags:
+    - 安全检查
+"""
 @security_check.route('/security-checks', methods=['POST'])
 @token_required
 def create_security_check(current_user):
+    """
+    openapi:
+      summary: 创建安全检查记录
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SecurityCheck'
+      responses:
+        '201':
+          description: 安全检查记录创建成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 安全检查记录创建成功!
+        '401':
+          description: 未授权
+    """
     data = request.get_json()
     new_check = SecurityCheck(
         check_record=data['check_record'],
@@ -38,9 +66,37 @@ def create_security_check(current_user):
     db.session.commit()
     return jsonify({'message': '安全检查记录创建成功!'}), 201
 
+"""
+  tags:
+    - 安全检查
+"""
 @security_check.route('/security-checks/<int:check_id>', methods=['GET'])
 @token_required
 def get_security_check(current_user, check_id):
+    """
+    openapi:
+      summary: 获取安全检查记录
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: check_id
+          in: path
+          required: true
+          description: 安全检查记录ID
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 成功返回安全检查记录信息
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SecurityCheck'
+        '401':
+          description: 未授权
+        '404':
+          description: 安全检查记录不存在
+    """
     check = SecurityCheck.query.filter_by(check_id=check_id).first()
     if not check:
         return jsonify({'message': '安全检查记录不存在!'}), 404
