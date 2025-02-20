@@ -3,9 +3,7 @@ from models import db, Incident, Department, EventType, IncidentStatus, User
 from utils.jwt_utils import token_required, role_required
 from datetime import datetime
 import bleach
-
 incident = Blueprint('incident', __name__)
-
 # 辅助函数：用于检查用户是否可以修改事件状态
 def can_modify_incident(user, incident):
     """
@@ -13,7 +11,6 @@ def can_modify_incident(user, incident):
     """
     if user.role_level == -1 or user.role_level == 0:
         return True  # 管理员和领导⼩组有权修改所有事件
-
     if incident.submitted_by_user_id == user.user_id:  # 提交⼈
         if incident.status == IncidentStatus.DRAFT or incident.status == IncidentStatus.DEPARTMENT_REJECTED:
             return True
@@ -21,7 +18,6 @@ def can_modify_incident(user, incident):
     if user.role_level == 2 and incident.status == IncidentStatus.SUBMITTED_DEPARTMENT_REVIEW:
         # 只有当事件状态为 SUBMITTED_DEPARTMENT_REVIEW 时，部⻔领导才能修改
             return True
-
     # 指挥中⼼⻆⾊
     if user.role_level == 1 and incident.status in [
             IncidentStatus.DEPARTMENT_APPROVED,
@@ -29,11 +25,9 @@ def can_modify_incident(user, incident):
     ]:
             return True
     return False
-
 # 添加以下配置
 ALLOWED_TAGS = ['b', 'i', 'u', 'strong', 'em', 'a', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'br', 'ul', 'ol', 'li']
 ALLOWED_ATTRIBUTES = {'a': ['href', 'title'], 'abbr': ['title'], 'acronym': ['title']}
-
 def clean_html(text):
         return bleach.clean(text, tags=ALLOWED_TAGS, attributes=ALLOWED_ATTRIBUTES, strip=True)
 """
@@ -80,14 +74,11 @@ def department_approve_incident(current_user, incident_id):
     incident = Incident.query.get_or_404(incident_id)
     if incident.status != IncidentStatus.SUBMITTED_DEPARTMENT_REVIEW:
         return jsonify({'message': '事件状态不正确，⽆法批准!'}), 400
-
     if not can_modify_incident(current_user, incident):
         return jsonify({'message': '⽆权限执⾏此操作'}), 403
-
     incident.status = IncidentStatus.DEPARTMENT_APPROVED
     db.session.commit()
     return jsonify({'message': '事件已批准!'}), 200
-
 """
 tags:
   - 事件管理
@@ -140,24 +131,20 @@ def department_reject_incident(current_user, incident_id):
           description: 无权限执行此操作
         '404':
           description: 事件不存在
-
     """
-    # 假设前端通过JSON传递驳回原因
+    # 前端通过JSON传递驳回原因
     data = request.get_json()
     rejection_reason = data.get('rejection_reason')
     if not rejection_reason:
         return jsonify({'message': '请提供驳回原因!'}), 400
-
     incident = Incident.query.get_or_404(incident_id)
     if incident.status != IncidentStatus.SUBMITTED_DEPARTMENT_REVIEW:
             return jsonify({'message': '事件状态不正确，⽆法驳回!'}), 400
     if not can_modify_incident(current_user, incident):
         return jsonify({'message': '⽆权限执⾏此操作'}), 403
-
     incident.status = IncidentStatus.DEPARTMENT_REJECTED
     incident.rejection_reason = rejection_reason  # 记录驳回原因
     db.session.commit()
-
     return jsonify({'message': '事件已驳回!'}), 200
 """
 tags:
@@ -199,7 +186,6 @@ def command_center_submit_incident(current_user, incident_id):
            description: 无权限执行此操作
           '404':
             description: 事件不存在
-
     """
     incident = Incident.query.get_or_404(incident_id)
     if incident.status != IncidentStatus.DEPARTMENT_APPROVED:
@@ -265,14 +251,11 @@ def command_center_resolve_incident(current_user, incident_id):
     incident_info = data.get('incident_info')  # 获取新的事件内容
     if not resolution_measures:
          return jsonify({'message': '请填写解决措施!'}), 400
-
     incident = Incident.query.get_or_404(incident_id)
     if incident.status != IncidentStatus.PENDING_COMMAND_CENTER:
       return jsonify({'message': '当前状态⽆法解决!'}), 400
-
     if not can_modify_incident(current_user, incident):
         return jsonify({'message': '⽆权限执⾏此操作'}), 403
-
     incident.status = IncidentStatus.COMMAND_CENTER_PROCESSED
     incident.resolution_measures = resolution_measures
     # 如果incident_info不为空， 则更新事件内容
@@ -281,7 +264,6 @@ def command_center_resolve_incident(current_user, incident_id):
         cleaned_incident_info = clean_html(incident_info)
         incident.incident_info = cleaned_incident_info
     db.session.commit()
-
     return jsonify({'message': '指挥中⼼处理完成!'}), 200
 """
 tags:
@@ -327,10 +309,8 @@ def issue_emergency_team(current_user, incident_id):
     incident = Incident.query.get_or_404(incident_id)
     if incident.status != IncidentStatus.COMMAND_CENTER_PROCESSED:
         return jsonify({'message': '当前状态⽆法下发应急⼩组!'}), 400
-
     if not can_modify_incident(current_user, incident):
         return jsonify({'message': '⽆权限执⾏此操作'}), 403
-
     incident.status = IncidentStatus.ISSUED_EMERGENCY_TEAM
     db.session.commit()
     return jsonify({'message': '已下发应急⼩组!'}), 200
@@ -379,13 +359,11 @@ def resolve_incident(current_user, incident_id):
     # 只有在下发应急⼩组后才能完结
     if incident.status != IncidentStatus.ISSUED_EMERGENCY_TEAM:
         return jsonify({'message': '当前状态⽆法完结!'}), 400
-
     if not can_modify_incident(current_user, incident):
          return jsonify({'message': '⽆权限执⾏此操作'}), 403
     incident.status = IncidentStatus.RESOLVED
     incident.resolved_at = datetime.utcnow()
     db.session.commit()
-
     return jsonify({'message': '事件已完结!'}), 200
 """
 tags:
@@ -433,11 +411,9 @@ def close_incident(current_user, incident_id):
         return jsonify({'message': '当前状态⽆法关闭!'}), 400
     if not can_modify_incident(current_user, incident):
         return jsonify({'message': '⽆权限执⾏此操作'}), 403
-
     incident.status = IncidentStatus.CLOSED
     incident.closed_at = datetime.utcnow() #记录关闭时间
     db.session.commit()
-
     return jsonify({'message': '事件已关闭!'}), 200
 """
 tags:
@@ -471,7 +447,7 @@ def get_incident(current_user, incident_id):
           description: 事件不存在
     """
     incident = Incident.query.get_or_404(incident_id)
-    #⽆论什么⻆⾊，只要登录了， 就可以查看事件
+    #只要登录了， 就可以查看事件
     incident_data = {
       'incident_id': incident.incident_id,
       'incident_info': incident.incident_info,
@@ -487,6 +463,5 @@ def get_incident(current_user, incident_id):
       'resolution_measures': incident.resolution_measures,
       'closed_at': incident.closed_at.isoformat() if incident.closed_at else None,
       'resolved_at': incident.resolved_at.isoformat() if incident.resolved_at else None,
-
     }
     return jsonify(incident_data), 200

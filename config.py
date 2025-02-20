@@ -1,4 +1,7 @@
 import os
+from dotenv import load_dotenv  # 导入 load_dotenv
+
+load_dotenv()  # 加载 .env 文件中的环境变量
 
 class Config:
     # 数据库配置
