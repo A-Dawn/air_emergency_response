@@ -8,7 +8,7 @@ from models import User  # 导入 User 模型
 def generate_jwt_token(user, secret_key):
     """生成 JWT 令牌"""
     payload = {
-        'user_id': user.user_id,
+        'user_id': str(user.user_id),
         'role_level': user.role_level,  #  添加角色信息
         'exp': datetime.utcnow() + timedelta(days=1)  # 过期时间为 1 天
     }

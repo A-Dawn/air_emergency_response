@@ -8,15 +8,15 @@ import hashlib
 from utils.sm_utils import encrypt_sm4,decrypt_sm4 # 确保在这里导入
 
 class IncidentStatus(Enum):
-    DRAFT = 1  # 待提交
-    SUBMITTED_DEPARTMENT_REVIEW = 2  # 已提交待部门审批
-    DEPARTMENT_APPROVED = 3  # 部门审批已通过
-    DEPARTMENT_REJECTED = 4  # 部门审批已驳回
-    PENDING_COMMAND_CENTER = 5  # 待指挥中心处理
-    COMMAND_CENTER_PROCESSED = 6  # 指挥中心已处理
-    ISSUED_EMERGENCY_TEAM = 7  # 已下发应急小组
-    RESOLVED = 8  # 已解决
-    CLOSED = 9  # 已关闭
+    DRAFT = 1
+    SUBMITTED_DEPARTMENT_REVIEW = 2
+    DEPARTMENT_APPROVED = 3
+    DEPARTMENT_REJECTED = 4
+    PENDING_COMMAND_CENTER = 5
+    COMMAND_CENTER_PROCESSED = 6
+    ISSUED_EMERGENCY_TEAM = 7
+    RESOLVED = 8
+    CLOSED = 9
 
 class Incident(db.Model):
     __tablename__ = 'incidents'
@@ -44,75 +44,3 @@ class Incident(db.Model):
     departments = db.relationship('Department', secondary='incident_departments', backref=db.backref('incidents', lazy='dynamic'))
     def __repr__(self):
         return f'<Incident {self.incident_id}>'
-
-"""
-components:
-  schemas:
-    Incident:
-      type: object
-      properties:
-        incident_id:
-          type: integer
-          description: 事件ID
-        incident_info:
-          type: string
-          description: 事件详细信息 (SM4加密)
-        process_status:
-          type: integer
-          description: "处理状态"
-        response_log:
-          type: string
-          description: 响应日志
-        incident_level:
-          type: integer
-          description: "事件等级"
-        is_aviation:
-          type: boolean
-          description: 是否航空事件
-          default: false
-        event_type_id:
-          type: integer
-          description: 事件类型ID
-        attachment_url:
-          type: string
-          description: 附件URL
-        submitted_by_user_id:
-          type: integer
-          description: 提交用户ID
-        status:
-          type: string
-          description: 事件状态
-          enum:
-            - DRAFT
-            - SUBMITTED_DEPARTMENT_REVIEW
-            - DEPARTMENT_APPROVED
-            - DEPARTMENT_REJECTED
-            - PENDING_COMMAND_CENTER
-            - COMMAND_CENTER_PROCESSED
-            - ISSUED_EMERGENCY_TEAM
-            - RESOLVED
-            - CLOSED
-        rejection_reason:
-          type: string
-          description: 驳回原因
-        resolution_measures:
-          type: string
-          description: 解决方案
-        closed_at:
-          type: string
-          format: date-time
-          description: 关闭时间
-        resolved_at:
-          type: string
-          format: date-time
-          description: 解决时间
-        departments:
-          type: array
-          items:
-            $ref: '#/components/schemas/Department'
-      required:
-        - incident_info
-        - process_status
-        - incident_level
-        - event_type_id
-"""

@@ -131,7 +131,7 @@ pip install -r requirements.txt
 pip list | grep -E "flask|gmssl"
 # 预期输出：
 # Flask           2.0.3
-# gmssl           3.2.1
+# gmssl           3.2.2
 ```
 
 ---
@@ -148,7 +148,7 @@ CREATE DATABASE air_emergency
     COLLATE utf8mb4_unicode_ci;
 
 CREATE USER 'air_db_user'@'localhost' 
-    IDENTIFIED BY 'SecureDBPassword123!';
+    IDENTIFIED BY '--------------';
 
 GRANT ALL PRIVILEGES ON air_emergency.* 
     TO 'air_db_user'@'localhost';
@@ -169,13 +169,14 @@ mysql> EXIT;
 
 #### **五、环境变量与配置文件**  
 **1. 创建.env文件（敏感信息保护）**  
+##### 注意！.env已经被废除使用！
 ```bash
 nano /www/wwwroot/air_emergency_response/.env
 ```
 内容如下（按实际修改）：  
 ```ini
 # ==== 数据库配置 ====
-DATABASE_URL=mysql+pymysql://air_db_user:SecureDBPassword123!@localhost/air_emergency
+DATABASE_URL=mysql+pymysql://air_db_user:---------!@localhost/air_emergency
 
 # ==== JWT配置 ====
 JWT_SECRET_KEY=YourSuperSecretKey_32BytesLong!
@@ -222,13 +223,29 @@ After=network.target
 User=deployer
 Group=deployer
 WorkingDirectory=/www/wwwroot/air_emergency_response
-EnvironmentFile=/www/wwwroot/air_emergency_response/.env
+# 移除 EnvironmentFile 行
+# EnvironmentFile=/www/wwwroot/air_emergency_response/.env
+
+# 添加 Environment 行，设置所有环境变量
+Environment="DATABASE_URL=mysql+pymysql://air_db_user:XXXXXXXXX!@localhost/air_emergency"
+Environment="JWT_SECRET_KEY=XXXXXXXXXXXXX"
+Environment="SM2_PRIVATE_KEY=XXXXXXXXXXXXXXXXXXXX"
+Environment="SECRET_KEY=XXXXXXXXXXXXXXXXXXXXXXX"
+Environment="MAIL_SERVER=XXXXXXXXXXXXX"
+Environment="MAIL_PORT=25"
+Environment="MAIL_USE_TLS=true"
+Environment="MAIL_USE_SSL=false"
+Environment="MAIL_USERNAME=XXXXXXXXXXXXXXXX"
+Environment="MAIL_PASSWORD=XXXXXXXXXXXX"
+Environment="MAIL_DEFAULT_SENDER=XXXXXXXXXXXXXXXXXXX"
+Environment="MAX_FAILED_ATTEMPTS=5"
+Environment="BAN_DURATION=300"
+
 ExecStart=/www/wwwroot/air_emergency_response/venv/bin/gunicorn \
     -w 4 \
     -b 0.0.0.0:5000 \
     --timeout 120 \
     app:app
-
 Restart=always
 RestartSec=5
 
@@ -373,7 +390,7 @@ sudo tail -f /var/log/nginx/access.log
 **2. 备份策略**  
 ```bash
 # 每日数据库备份（配置cron）
-0 3 * * * mysqldump -u air_db_user -p'SecureDBPassword123!' air_emergency > /backup/db_$(date +\%F).sql
+0 3 * * * mysqldump -u air_db_user -p'XXXXXXXXXXXXXX' air_emergency > /backup/db_$(date +\%F).sql
 
 # 代码备份（每周日2点）
 0 2 * * 7 tar -czvf /backup/code_$(date +\%F).tar.gz /www/wwwroot/air_emergency_response

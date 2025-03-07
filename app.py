@@ -12,7 +12,7 @@ from version import version
 app = Flask(__name__)
 app.config.from_object(Config)
 db.init_app(app)
-csrf = CSRFProtect(app)
+#csrf = CSRFProtect(app)
 mail = Mail(app)
 # Swagger(app)
 # 注册蓝图

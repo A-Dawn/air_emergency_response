@@ -132,7 +132,7 @@ def department_reject_incident(current_user, incident_id):
         '404':
           description: 事件不存在
     """
-    # 前端通过JSON传递驳回原因
+    # 假设前端通过JSON传递驳回原因
     data = request.get_json()
     rejection_reason = data.get('rejection_reason')
     if not rejection_reason:
